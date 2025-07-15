@@ -44,6 +44,17 @@ fun AvatarView(
                 style = androidx.compose.ui.graphics.drawscope.Stroke(1f)
             )
         }
+        val sortedX = circles.sortedBy { it.pX }
+        val sortedY = circles.sortedBy { it.pY }
+        val left = sortedX.minBy { it.pX - it.radius }.let { it.pX - it.radius }
+        val right = sortedX.maxBy { it.pX + it.radius }.let { it.pX + it.radius }
+        val top = sortedY.minBy { it.pY - it.radius }.let { it.pY - it.radius }
+        val bottom = sortedY.maxBy { it.pY + it.radius }.let { it.pY + it.radius }
+
+        drawLine(Color.Black, Offset(left, top), Offset(right, top))
+        drawLine(Color.Black, Offset(right, top), Offset(right, bottom))
+        drawLine(Color.Black, Offset(right, bottom), Offset(left, bottom))
+        drawLine(Color.Black, Offset(left, bottom), Offset(left, top))
 
         drawLine(Color.Black, size.center.copy(y = 0f), size.center.copy(y = size.height))
         drawLine(Color.Black, size.center.copy(x = 0f), size.center.copy(x = size.width))
@@ -115,23 +126,20 @@ fun calcCords(size: Size): List<AvatarP> {
         }
     }
 
-    return circles
+    return circles.centralize(size)
 }
 
-fun List<AvatarP>.normalize(size : Size) : List<AvatarP> {
-    var sorted = this.sortedBy { it.pX }
-    val left = sorted.first().pX - sorted.first().radius
-    val right = sorted.last().pX + sorted.last().radius
-    var center = (right - left) / 2f
-    var delta = size.center.x - center
+fun List<AvatarP>.centralize(size : Size) : List<AvatarP> {
+    val left = minBy { it.pX - it.radius }.let { it.pX - it.radius }
+    val right = maxBy { it.pX + it.radius }.let { it.pX + it.radius }
+    val top = minBy { it.pY - it.radius }.let { it.pY - it.radius }
+    val bottom = maxBy { it.pY + it.radius }.let { it.pY + it.radius }
 
-    sorted = sorted.map { it.copy(pX = it.pX - delta) }
-        .sortedBy { it.pY }
+    var center = (right - left) / 2f + left
+    val deltaX = size.center.x - center
 
-    val top = sorted.first().pY - sorted.first().radius
-    val bottom = sorted.last().pY + sorted.last().radius
-    center = (top - bottom) / 2f
-    delta = size.center.y - center
+    center = (bottom - top) / 2f + top
+    val deltaY = size.center.y - center
 
-    return sorted.map { it.copy(pY = it.pY - delta) }
+    return this.map { it.copy(pX = it.pX + deltaX, pY = it.pY + deltaY) }
 }
